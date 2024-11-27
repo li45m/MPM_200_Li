@@ -2,7 +2,13 @@
 ## Quantitative veterinary epidemiology and disease ecology lab
 ==============================
 
-Text summarizing your project.
+Initial commit
+#Summary on Hummingbird data assignment:
+##Checked the structure of the data and identified that of th 12 variables, only the "brought-in-after" variable is numeric. 
+##Creared a random dataset that contains 5000 observations from the original data file.
+##Identified 5 risk factos affecting hummingbird survival in rescue: whether hummingbirds received first aid, location, resons for being at the rescue, age of hummingbirds, and season.
+##For each risk factor a bar plot was created, and by visual evaluation, it appears that the age of hummingbirds when they were brought to the rescue might affect their survivability.
+##The portions of Selasphorus and Non-Selasphorus hummingbirds survided were not statistically different. 
 
 ## Project Organization
 ------------
