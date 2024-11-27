@@ -1,0 +1,229 @@
+---
+title: "HW_R"
+output: html_document
+date: "2024-11-20"
+---
+
+```{r}
+install.packages("readr")
+install.packages("ggplot2")
+install.packages("beepr")
+install.packages("devtools")
+install.packages("tidyverse")
+install.packages("sjPlot")
+install.packages("dplyr")
+```
+
+```{r}
+library(beepr)
+beep(sound = 8)
+```
+
+```{r}
+#Q1. read the Hummingbird_data.csv file in R
+#Q2. How many rows and columns are in the datafame
+data = Hummingbird_data
+colnames(data)
+```
+```{r}
+#Checking the Structure of Each Column and Identifying Data Types
+str(data)
+data_types = sapply(data, class)
+print(data_types)
+#create a random subset of the given data
+library(dplyr)
+model_data = sample_n(data, 5000)
+```
+```{r}
+#Q3: How many rows and columns are present in your data frame currently?
+#There are 12 columns and 6908 rows.
+#Q4: How many columns are categorical variables, and how many are continuous variables in the dataset?
+#Categorical variables: 11 columns, continuous variable: 1 column.
+#Q5: submit your model_data file along with your submission. 
+getwd()
+write.csv(Hummingbird_data, "Hummingbird_data_MuyuanLi.csv")
+```
+```{r}
+#Section 2
+library(ggplot2)
+model_data%>% 
+group_by(Place)%>% 
+summarise(count = n_distinct(ID))
+```
+```{r}
+#Q7. Please explain the code above in words, including what each line of R code is doing, starting from the code that creates the "Rehab" object until the plot.
+rehab = model_data  %>% #making a new data frame "rehab" sourcing from model-data, and passing the results to the next line of code
+group_by(Place)%>% #in "rehab", group the data by variable "place", and passing the results to the next line of code
+summarise(count = n_distinct(ID))#summarize the number of cases at each place as a separate column called "count"
+```
+
+```{r}
+p = ggplot(rehab, aes(x = Place, y = count)) + #use the ggplot function and set "place" as x-axis and "count" as y-axis
+geom_bar(stat="identity", color = 'steelblue', fill = 'steelblue')+ #create a bar plot and use the numbers in "count" column as the height of the bars, and make the bars steel blue
+xlab('Rehabilitation center')+ ylab('number of hummingbirds')+ #create x-axis label "Rehabilitation center" and y-axis label "number of hummingbirds"
+labs(title = "Number of rescued hummingbirds") #Name the plot as "Number of rescued hummingbirds"
+p #Display the plot that was generated
+#Q6. Please save this plot to a PDF file and submit it along with your assignment. Ensure that the size of the plot is 4 inches wide and 3 inches tall.
+ggsave("p.pdf", width = 4, height = 3) #save the plot created "p" as a pdf file and name it as "p.pdf" with the specified dimensions.  
+```
+```{r}
+#Section 3
+#Pick 5 covariates: first aid, age, place, season, reason 
+FirstAidD <- model_data  %>%
+group_by(F_Aid, Disposition_binary)%>%
+summarise(count = n_distinct(ID))
+
+AgeD <- model_data  %>%
+group_by(Age_e, Disposition_binary)%>%
+summarise(count = n_distinct(ID))
+
+PlaceD <- model_data  %>%
+group_by(Place, Disposition_binary)%>%
+summarise(count = n_distinct(ID))
+
+SeasonD <- model_data  %>%
+group_by(season, Disposition_binary)%>%
+summarise(count = n_distinct(ID))
+
+ReasonD <- model_data  %>%
+group_by(r, Disposition_binary)%>%
+summarise(count = n_distinct(ID))
+```
+```{r}
+ggplot(FirstAidD,aes(x=Disposition_binary, y=count))+
+  geom_bar(stat = "identity")+
+  facet_grid(. ~F_Aid)
+```
+
+```{r}
+ggplot(AgeD,aes(x=Disposition_binary, y=count))+
+  geom_bar(stat = "identity")+
+  facet_grid(.~Age_e)
+```
+
+```{r}
+ggplot(PlaceD,aes(x=Disposition_binary, y=count))+
+  geom_bar(stat = "identity")+
+  facet_grid(. ~Place)
+```
+
+```{r}
+ggplot(SeasonD,aes(x=Disposition_binary, y=count))+
+  geom_bar(stat = "identity")+
+  facet_grid(. ~season)
+```
+
+```{r}
+ggplot(ReasonD,aes(x=Disposition_binary, y=count))+
+  geom_bar(stat = "identity")+
+  facet_grid(. ~r)
+```
+```{r}
+#Q8: What is your observation based on those tables and plots? Do you think all those are associated with the final disposition of hummingbirds? Any suggestions for statistically testing them?
+#First aid: it seems that numerically there are more hummingbirds not receiving first aid, and the number of hummingbirds died without first aid was more than those died with first aid. 
+#Age: it appears that the majority of hummingbird came to rescues were adult like, and more adult-like hummingbirds died than released. Whereas for nestling hummingbirds, the number released was more than died. It appears that age might have an effect on survival.
+#Place: for all three locations more hummingbirds were dead than released. The most cases were seen at Lindsey.
+#Season: during all seasons more hummingbirds were dead than released. The most cases were seen in spring.
+#Reason: among 7 reasons, only nest-related reason had more hummingbirds released than died. All other reasons had more hummingbirds dead than released. It appears that reasons might affect survival, but also "nest-related" can be confounded by age ("adult-like" vs "nestling"). 
+#We can use chi-square to test the association between exposures and final dispositions of hummingbirds statistically.  
+```
+
+```{r}
+#Q10: Calculate the proportion of hummingbirds that were released versus those that died for each rehabilitation center.
+# Calculate proportions
+proportions = model_data %>%
+  group_by(Place, Disposition_binary) %>%
+  summarise(count = n_distinct(ID)) %>%
+  group_by(Place) %>%
+  mutate(proportion = count / sum(count))
+print (proportions)
+```
+
+```{r}
+# Plot the proportions
+ggplot(proportions, aes(x = Place, y = proportion, fill = Disposition_binary)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  xlab("Rehabilitation Center") +
+  ylab("Proportions") +
+  labs(title = "Proportion of Hummingbirds Died and released at Each Rehabilitation Center", fill = "status")
+ggsave("proportion.pdf", width = 4, height = 3) 
+```
+```{r}
+#Q11: Merge the Species_e column into broader categories
+## Hint: think about the logic. How would you quickly classify these species into multiple groups using ifelse statement?
+
+model_data$Species_group = ifelse(model_data$Species_e == "Selasphorus", "Selasphorus", "Non-selasphorus")
+
+# Tabulate and plot the distribution
+species_distribution = model_data %>%
+  group_by(Species_group, Disposition_binary) %>%
+  summarise(count = n_distinct(ID))
+print(species_distribution)
+```
+
+```{r}
+ggplot(species_distribution, aes(x = Species_group, y = count, fill = Disposition_binary)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  xlab("Species Group") +
+  ylab("Number of Hhummingbirds") +
+  labs(title = "Number of Hummingbirds Died and Released by Species Group")
+ggsave("Count.pdf", width = 4, height = 3) 
+```
+```{r}
+#Analyze how the survival rates differ across these species groups
+x1 <- 1447  
+x2 <- 315  
+
+n1 <- 4130  
+n2 <- 870  
+
+test_result <- prop.test(c(x1, x2), c(n1, n2))
+
+print(test_result)
+```
+```{r}
+#Q12. Analyze the Trend of Hummingbird Admissions Over Time
+model_data$Admitted_date = as.Date(model_data$Admitted, format = "%m/%d/%Y")
+#Q12a. Please explain the argument format in code above
+#This is to tell R that my original date in the data frame was set up in the format of "month/date/year". Basically telling R how to interpret "Admitted" column
+```
+
+```{r}
+#Summarize data by admission month
+admissions_by_month = model_data %>%
+  mutate(admissions_by_month = format(Admitted_date, "%Y-%m")) %>%
+  group_by(admissions_by_month) %>%
+  summarise(count = n_distinct(ID))
+print(admissions_by_month)
+```
+```{r}
+#Summarize data by admission year
+admissions_by_year = model_data %>%
+  mutate(admissions_by_year = format(Admitted_date, "%Y")) %>%
+  group_by(admissions_by_year) %>%
+  summarise(count = n_distinct(ID))
+print(admissions_by_year)
+```
+
+```{r}
+#Plot admissions by month
+p_month = ggplot(admissions_by_month, aes(x = admissions_by_month, y = count)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  xlab("Admission Month") +
+  ylab("Number of Hummingbirds") +
+  labs(title = "Number of Hummingbirds Admitted by Month")
+p_month
+ggsave("p-month.pdf") 
+```
+```{r}
+#Plot admissions by year
+p_year = ggplot(admissions_by_year, aes(x = admissions_by_year, y = count)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  xlab("Admission Year") +
+  ylab("Number of Hummingbirds") +
+  labs(title = "Number of Hummingbirds Admitted by Month")
+p_year
+ggsave("p-year.pdf")
+```
+
+
