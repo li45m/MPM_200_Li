@@ -225,5 +225,19 @@ p_year = ggplot(admissions_by_year, aes(x = admissions_by_year, y = count)) +
 p_year
 ggsave("p-year.pdf")
 ```
+```{r}
+#Plot admissions by month and by species 
+species_by_month = model_data %>%
+  mutate(admissions_by_month = format(Admitted_date, "%Y-%m")) %>%
+  group_by(admissions_by_month, Species_group) %>%
+  summarise(count = n_distinct(ID))
 
+p_month_species = ggplot(species_by_month, aes(x = admissions_by_month, y = count, fill=Species_group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  xlab("Admission Month") +
+  ylab("Number of Hummingbirds") +
+  labs(title = "Number of Hummingbirds Admitted by Month by Species")
+p_month_species
+ggsave("p-month-species.pdf") 
+```
 
