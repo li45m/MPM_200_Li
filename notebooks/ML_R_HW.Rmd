@@ -240,21 +240,63 @@ p_month_species = ggplot(species_by_month, aes(x = admissions_by_month, y = coun
 p_month_species
 ggsave("p-month-species.pdf") 
 ```
-
+```{r}
 # NEW Code from Pranav: Running a full model and model selection
 ## Perform backward elimination to select a good fitting model for predicting the logit of the probability of survival starting from the model which contains all five predictors that you selected in the previous question. Use the `step` function to achieve the selection. We will go through model selection in detail in upcoming classes. So, do not worry about it for now, but this is one of the methods to select the best model by dropping individual covariates.
-```{r}
-fullmodel  = glm(Disposition_binary ~ r + Green_Orange + season+F_Aid+Species_e, data = model_data, family= binomial(link = logit))
-fullmodel
 
+# Ensure categorical variables are factors
+model_data$Green_Orange <- as.factor(model_data$Green_Orange)
+model_data$season <- as.factor(model_data$season)
+model_data$F_Aid <- as.factor(model_data$F_Aid)
+model_data$Species_e <- as.factor(model_data$Species_e)
+model_data$r <- as.factor(model_data$r)
+
+#Make a new column "Disposition_binary_number" so that the outcomes are coded as 0 (died) and 1 (released)
+model_data <- model_data %>%
+  mutate(Disposition_binary_number = ifelse(Disposition_binary == "Released", 1, 0))
+
+# Check the new column
+head(model_data$Disposition_binary_number)
+
+# Check for NA values and remove rows with missing data (optional)
+model_data <- na.omit(model_data)
+
+# Fit the logistic regression model
+fullmodel = glm(Disposition_binary_number ~ r + Green_Orange + season + F_Aid + Species_e,
+                 data = model_data, family = binomial(link = "logit"))
+
+# View the model summary
+summary(fullmodel)
 ```
 ```{r}
 backward_model = step(fullmodel,k=2,direction = "backward",test="Chisq")
 ```
 ```{r}
 forward_model = step(fullmodel,k=2,direction = ,test="Chisq")
-```
+
 ### Can you describe the best fitting model: covariates in models selected by forward and backward selection process?
+#It appears that both models selected the same variables and gave the same results.
 #### Find the covariate with the highest Odds for survival
+#Species.
 ### Did both the models have the same measures of effects for covariates?
+#Yes.
+```
+```{r}
+#Use this command to view the properties of the fitted model: 
+names(backward_model)
+#Q1: How many model properties are available?
+#There are 31 model properties available.
+```
+```{r}
+#Calculate odds ratios manually or use this command for a summary:
+ library(sjPlot)
+ tab_model(backward_model)
+ #Q2: Which variable has the highest odds ratio for survival?
+ #Species (non-selasphorus) has the highest odds ratio for survival (OR=3.32). 
+ 
+ #Q3: Do the calculated odds ratios match the values provided by sjPlot?
+ #Referring to values above, the p-values matched with the p-values provided in sjPlot. 
+```
+
+
 
